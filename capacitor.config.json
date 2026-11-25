@@ -1,0 +1,6 @@
+{
+  "appId": "com.yourname.machinery",
+  "appName": "Machinery Timesheet",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}
