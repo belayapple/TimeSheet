@@ -1,0 +1,15 @@
+{
+  "name": "machinery-timesheet",
+  "version": "1.0.0",
+  "description": "Machinery Timesheet App",
+  "scripts": {
+    "build": "echo 'Build step complete'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/core": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0"
+  }
+}
