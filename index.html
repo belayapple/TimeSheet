@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Machinery Timesheet</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --surface: #1a1d24;
+            --primary: #10b981;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --border: #2d3748;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        header { background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        header h1 { font-size: 18px; font-weight: 600; color: var(--primary); }
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .hidden { display: none !important; }
+        .nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        .nav-item { text-align: center; color: var(--muted); font-size: 12px; cursor: pointer; padding: 5px 15px; border-radius: 8px; transition: 0.2s; }
+        .nav-item.active { color: var(--primary); background: rgba(16, 185, 129, 0.1); }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; text-align: center; margin-bottom: 10px; }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 15px; }
+        .row { display: flex; gap: 10px; }
+        .row .form-group { flex: 1; }
+        .alert { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; display: none; }
+        .list-item { background: var(--bg); border-left: 3px solid var(--primary); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .list-details { font-size: 13px; color: var(--muted); }
+        .report-box { background: var(--bg); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Machinery Manager</h1>
+    </header>
+
+    <div class="container">
+        <!-- TIMESHEET TAB -->
+        <div id="view-timesheet">
+            <div class="card">
+                <div class="form-group">
+                    <label>Select Site</label>
+                    <select id="select-site" onchange="updateTimesheetView()">
+                        <option value="">-- Choose a Site --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="timesheet-active" class="hidden">
+                <button class="btn btn-primary" onclick="showLogForm()">+ Log New Shift</button>
+                <h3 style="margin: 20px 0 10px; font-size: 14px; color: var(--muted);">TODAY'S LOGS</h3>
+                <div id="log-list"></div>
+                <button class="btn btn-outline" style="margin-top: 20px;" onclick="switchView('report')">View Monthly Report</button>
+            </div>
+            <div id="timesheet-inactive" style="text-align: center; color: var(--muted); padding: 40px 0;">Select a site to view active machinery.</div>
+        </div>
+
+        <!-- LOG FORM -->
+        <div id="view-log-form" class="hidden">
+            <div class="card">
+                <h2 style="font-size: 16px; margin-bottom: 15px;">Log Shift</h2>
+                <div id="log-error" class="alert"></div>
+                <div class="form-group"><label>Machine</label><select id="log-machine"></select></div>
+                <div class="form-group"><label>Operator / Driver</label><select id="log-operator"></select></div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Month</label>
+                        <select id="date-month">
+                            <option value="መስከረም">መስከረም</option><option value="ጥቅምት">ጥቅምት</option>
+                            <option value="ኅዳር" selected>ኅዳር</option><option value="ታኅሣሥ">ታኅሣሥ</option>
+                            <option value="ጥር">ጥር</option><option value="የካቲት">የካቲት</option>
+                            <option value="መጋቢት">መጋቢት</option><option value="ሚያዝያ">ሚያዝያ</option>
+                            <option value="ግንቦት">ግንቦት</option><option value="ሰኔ">ሰኔ</option>
+                            <option value="ሐምሌ">ሐምሌ</option><option value="ነሐሴ">ነሐሴ</option>
+                            <option value="ጳጉሜ">ጳጉሜ</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Day</label><input type="number" id="date-day" value="15" min="1" max="30"></div>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>Start (24h)</label><input type="time" id="log-start" value="08:00"></div>
+                    <div class="form-group"><label>End (24h)</label><input type="time" id="log-end" value="17:00"></div>
+                </div>
+                <div class="form-group"><label>Idle Time (Hours)</label><input type="number" id="log-idle" value="0" step="0.5" min="0"></div>
+                <button class="btn btn-primary" onclick="saveLog()">Save Shift</button>
+                <button class="btn btn-danger" onclick="hideLogForm()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- DATABASE TAB -->
+        <div id="view-database" class="hidden">
+            <div class="card">
+                <h2 style="font-size: 16px; margin-bottom: 10px;">Add Site</h2>
+                <div class="row">
+                    <input type="text" id="new-site-name" placeholder="Site Name" style="flex: 2; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
+                    <button class="btn btn-primary" style="flex: 1; margin:0; padding: 10px;" onclick="addSite()">Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2 style="font-size: 16px; margin-bottom: 10px;">Add Machine</h2>
+                <input type="text" id="new-machine-name" placeholder="Machine Name" style="width: 100%; margin-bottom: 10px; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
+                <div class="row">
+                    <select id="new-machine-type" style="flex: 1; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
+                        <option value="Owned">Owned</option><option value="Rental">Rental</option>
+                    </select>
+                    <button class="btn btn-primary" style="flex: 1; margin:0; padding: 10px;" onclick="addMachine()">Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2 style="font-size: 16px; margin-bottom: 10px;">Add Personnel</h2>
+                <input type="text" id="new-person-name" placeholder="Name" style="width: 100%; margin-bottom: 10px; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
+                <div class="row">
+                    <select id="new-person-role" style="flex: 1; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
+                        <option value="Operator">Operator</option><option value="Driver">Driver</option>
+                    </select>
+                    <button class="btn btn-primary" style="flex: 1; margin:0; padding: 10px;" onclick="addPersonnel()">Add</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORT TAB -->
+        <div id="view-report" class="hidden">
+            <div class="card">
+                <h2 style="font-size: 16px; margin-bottom: 10px;">Monthly Report</h2>
+                <div id="report-content" class="report-box">No data available.</div>
+                <button class="btn btn-outline" style="margin-top: 15px;" onclick="alert('PDF Export coming soon!')">Export as PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="nav">
+        <div class="nav-item active" id="nav-timesheet" onclick="switchView('timesheet')"><span class="nav-icon">⏱️</span>Timesheet</div>
+        <div class="nav-item" id="nav-database" onclick="switchView('database')"><span class="nav-icon">🗄️</span>Database</div>
+        <div class="nav-item" id="nav-report" onclick="switchView('report')"><span class="nav-icon">📄</span>Report</div>
+    </div>
+
+    <script>
+        let sites = ["Site A (Bole Road)"];
+        let machines = [{name: "Dump Truck 01", type: "Owned"}];
+        let personnel = [{name: "Abebe Bikila", role: "Driver"}];
+        let logs = [];
+
+        function switchView(viewId) {
+            ['timesheet', 'database', 'report', 'log-form'].forEach(v => document.getElementById('view-' + v).classList.add('hidden'));
+            ['timesheet', 'database', 'report'].forEach(v => document.getElementById('nav-' + v).classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            if(document.getElementById('nav-' + viewId)) document.getElementById('nav-' + viewId).classList.add('active');
+            if (viewId === 'timesheet') loadSitesDropdown();
+            if (viewId === 'report') updateReport();
+        }
+
+        function showLogForm() {
+            if (!document.getElementById('select-site').value) { alert("Please select a site."); return; }
+            document.getElementById('view-timesheet').classList.add('hidden');
+            document.getElementById('view-log-form').classList.remove('hidden');
+            document.getElementById('log-machine').innerHTML = machines.map(m => `<option value="${m.name}">${m.name} (${m.type})</option>`).join('');
+            document.getElementById('log-operator').innerHTML = personnel.map(p => `<option value="${p.name}">${p.name} (${p.role})</option>`).join('');
+        }
+
+        function hideLogForm() {
+            document.getElementById('view-log-form').classList.add('hidden');
+            document.getElementById('view-timesheet').classList.remove('hidden');
+        }
+
+        function updateTimesheetView() {
+            const site = document.getElementById('select-site').value;
+            if (!site) {
+                document.getElementById('timesheet-active').classList.add('hidden');
+                document.getElementById('timesheet-inactive').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('timesheet-active').classList.remove('hidden');
+            document.getElementById('timesheet-inactive').classList.add('hidden');
+            renderLogs(site);
+        }
+
+        function saveLog() {
+            const site = document.getElementById('select-site').value;
+            const machine = document.getElementById('log-machine').value;
+            const operator = document.getElementById('log-operator').value;
+            const start = document.getElementById('log-start').value;
+            const end = document.getElementById('log-end').value;
+            const idle = parseFloat(document.getElementById('log-idle').value) || 0;
+            const day = document.getElementById('date-day').value;
+            const month = document.getElementById('date-month').value;
+            
+            const startDate = new Date(`1970-01-01T${start}:00`);
+            const endDate = new Date(`1970-01-01T${end}:00`);
+            let diffMs = endDate - startDate;
+            if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
+            const gross = diffMs / (1000 * 60 * 60);
+            const net = gross - idle;
+
+            logs.push({ site, machine, operator, start, end, idle, gross, net, day, month });
+            hideLogForm();
+            renderLogs(site);
+        }
+
+        function renderLogs(site) {
+            const list = document.getElementById('log-list');
+            const siteLogs = logs.filter(l => l.site === site);
+            if (siteLogs.length === 0) {
+                list.innerHTML = '<p style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px;">No shifts logged.</p>';
+                return;
+            }
+            list.innerHTML = siteLogs.map(l => `
+                <div class="list-item">
+                    <div><strong style="font-size: 14px;">${l.machine}</strong>
+                    <div class="list-details">${l.operator} | ${l.month} ${l.day}</div>
+                    <div class="list-details" style="color: var(--primary);">${l.start} - ${l.end} (24h)</div></div>
+                    <div style="text-align: right;"><strong style="color: var(--primary); font-size: 16px;">${l.net.toFixed(1)}h</strong>
+                    <div class="list-details">Idle: ${l.idle}h</div></div>
+                </div>
+            `).join('');
+        }
+
+        function loadSitesDropdown() {
+            const select = document.getElementById('select-site');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Choose a Site --</option>' + sites.map(s => `<option value="${s}">${s}</option>`).join('');
+            if(sites.includes(currentVal)) select.value = currentVal;
+            updateTimesheetView();
+        }
+
+        function addSite() {
+            const name = document.getElementById('new-site-name').value.trim();
+            if(name) { sites.push(name); document.getElementById('new-site-name').value = ''; loadSitesDropdown(); alert("Site Added!"); }
+        }
+        function addMachine() {
+            const name = document.getElementById('new-machine-name').value.trim();
+            const type = document.getElementById('new-machine-type').value;
+            if(name) { machines.push({name, type}); document.getElementById('new-machine-name').value = ''; alert("Machine Added!"); }
+        }
+        function addPersonnel() {
+            const name = document.getElementById('new-person-name').value.trim();
+            const role = document.getElementById('new-person-role').value;
+            if(name) { personnel.push({name, role}); document.getElementById('new-person-name').value = ''; alert("Personnel Added!"); }
+        }
+
+        function updateReport() {
+            const box = document.getElementById('report-content');
+            if (logs.length === 0) { box.innerText = "No data available."; return; }
+            let text = `የማሽነሪ ወርሃዊ ሪፖርት\n\n`;
+            let tGross = 0, tIdle = 0, tNet = 0;
+            logs.forEach((l, i) => {
+                text += `${i + 1}. ${l.machine} (${l.site})\n   ኦፕሬተር: ${l.operator}\n   ሰዓት: ${l.start} - ${l.end}\n   ጠቅላላ: ${l.gross.toFixed(1)}h | የከረፈ: ${l.idle}h | የሠራው: ${l.net.toFixed(1)}h\n\n`;
+                tGross += l.gross; tIdle += l.idle; tNet += l.net;
+            });
+            text += `---------------------------------\nጠቅላላ (Gross): ${tGross.toFixed(1)}\nየከረፈ (Idle): ${tIdle.toFixed(1)}\nየሠራው (Net): ${tNet.toFixed(1)}\n`;
+            box.innerText = text;
+        }
+
+        loadSitesDropdown();
+    </script>
+</body>
+</html>
