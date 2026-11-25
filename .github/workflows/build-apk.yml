@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK with Bubblewrap
 
 on:
   push:
@@ -13,34 +13,39 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
     - name: Setup Java JDK
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Install dependencies
-      run: npm install
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
 
-    - name: Add Android platform
-      run: npx cap add android
+    - name: Install Bubblewrap CLI
+      run: npm install -g @bubblewrap/cli
 
-    - name: Sync Capacitor
-      run: npx cap sync
-
-    - name: Build APK with Gradle
+    - name: Initialize Bubblewrap (TwA)
       run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        # This creates the Android project files based on a dummy URL.
+        # We'll replace the dummy URL with our local index.html later.
+        echo '{"packageId":"com.belayapple.timesheet","host":"https://example.com","name":"Machinery Timesheet","launcherName":"Timesheet","webManifestUrl":"https://example.com/manifest.json"}' > twa-manifest.json
+        bubblewrap init --manifest=./twa-manifest.json --directory=./twa-project --skipPwaValidation
 
-    - name: Upload APK Artifact
+    - name: Replace with our local web app
+      run: |
+        # Copy our index.html into the generated Android assets
+        cp index.html twa-project/app/src/main/res/raw/index.html || true
+
+    - name: Build APK
+      run: |
+        cd twa-project
+        bubblewrap build --skipPwaValidation
+
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: machinery-timesheet-apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: twa-project/app-release-signed.apk
